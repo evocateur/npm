@@ -15,11 +15,7 @@ var fixture = new Tacks(Dir({
       'echoPATH': Symlink('../a/bin.js')
     }),
     'a': Dir({
-      'bin.js': File([
-        '#!/usr/bin/env node',
-        'console.log("PATH from local bin")',
-        'console.log(process.env.PATH)'
-      ].join('\n')),
+      'bin.js': File('#!/usr/bin/env node\nconsole.log(process.env.PATH)'),
       'package.json': File({
         _requested: {
           rawSpec: 'file:///mods/a'
@@ -33,11 +29,7 @@ var fixture = new Tacks(Dir({
     })
   }),
   scripts: Dir({
-    echoCWD: File([
-      '#!/usr/bin/env node',
-      'console.log(process.cwd())',
-      'console.log("CWD from local script")'
-    ].join('\n'))
+    echoCWD: File('#!/usr/bin/env node\nconsole.log(process.cwd())')
   }),
   'package.json': File({
     name: 'shrinkwrap-lifecycle-path',
@@ -51,7 +43,7 @@ var fixture = new Tacks(Dir({
     },
     dependencies: {
       'a': 'file:///mods/a'
-    },
+    }
   })
 }))
 
@@ -74,7 +66,7 @@ test('setup', function (t) {
 test('verify CWD and PATH are correct during shrinkwrap lifecycle', function (t) {
   common.npm([
     'shrinkwrap',
-    '--loglevel', 'silent'
+    '--loglevel', 'warn'
   ], {
     cwd: testdir
   }, function (err, code, stdout, stderr) {
@@ -82,13 +74,14 @@ test('verify CWD and PATH are correct during shrinkwrap lifecycle', function (t)
     t.is(code, 0, 'exited ok')
     t.notOk(stderr, 'no output stderr')
     t.comment(stdout.trim())
+    var lines = stdout.trim().toLowerCase().split('\n')
 
     var expectWorkingDir = testdir.toLowerCase()
-    var actualWorkingDir = stdout.trim().split('\n').shift().toLowerCase()
+    var actualWorkingDir = lines.shift()
     t.contains(actualWorkingDir, expectWorkingDir, 'cwd is package root')
 
     var expectBinPath = path.resolve(testdir, 'node_modules', '.bin').toLowerCase()
-    var actualBinPath = stdout.trim().split('\n').pop().toLowerCase()
+    var actualBinPath = lines.pop()
     t.contains(actualBinPath, expectBinPath, 'path includes local .bin')
 
     t.done()
